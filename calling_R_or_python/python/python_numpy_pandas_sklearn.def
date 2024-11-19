@@ -1,0 +1,9 @@
+# This apptainer ".def" file is a recipe for building a container.
+
+Bootstrap: docker
+From: python:3.11
+
+%post
+    python3 -m pip install numpy
+    python3 -m pip install pandas
+    python3 -m pip install scikit-learn

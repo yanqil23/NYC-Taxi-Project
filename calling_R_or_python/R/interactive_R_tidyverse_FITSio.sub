@@ -1,0 +1,30 @@
+# ----------------------------------------------------------------------
+# This file is only necessary for students who want to use an R
+# package other than tidyverse and FITSio.
+# ----------------------------------------------------------------------
+
+# Run via:
+#   condor_submit -i interactive_R_tidyverse_FITSio.sub
+#
+# Then, in interactive job, run this to make an Apptainer ".sif" file
+# that provides a software environment on CHTC computers:
+#   apptainer build R_tidyverse_FITSio.sif R_tidyverse_FITSio.def
+#
+# Then run this to test a shell with the ".sif" container:
+#   apptainer shell -e R_tidyverse_FITSio.sif
+# Tests should include starting R (or Rscript) and importing these packages.
+#
+# After exiting this interactive job, copy the new
+# R_tidyverse_FITSio.sif to /staging/NetID, where NetID is your NetID,
+# so that you can refer to it in your ".sub" file.
+
+log = interactive_R_tidyverse_FITSio.log
+
+transfer_input_files = R_tidyverse_FITSio.def
+
++IsBuildJob = true
+request_cpus = 1
+request_memory = 4GB
+request_disk = 10GB
+
+queue
