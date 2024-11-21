@@ -1,37 +1,81 @@
 import pandas as pd
 import sys
 
-# 检查输入参数
+# Check for correct usage
 if len(sys.argv) != 3:
     print("Usage: python process_parquet_to_csv.py <input_parquet> <output_csv>")
     sys.exit(1)
 
-# 获取输入和输出文件路径
 input_parquet = sys.argv[1]
 output_csv = sys.argv[2]
 
-# 指定需要的列
-columns_to_select = [
-    "tpep_pickup_datetime",
-    "tpep_dropoff_datetime",
-    "Passenger_count",
-    "Trip_distance",
-    "Tip_amount",
-    "Total_amount"
+# Define column selection for 2009 data
+columns_2009 = {
+    "Trip_Pickup_DateTime": "pickup_datetime",
+    "Trip_Dropoff_DateTime": "dropoff_datetime",
+    "Passenger_Count": "passenger_count",
+    "Trip_Distance": "trip_distance",
+    "Tip_Amt": "tip_amount",
+    "Total_Amt": "total_amount",
+}
+
+# Define default column selection
+columns_default = [
+    "pickup_datetime",
+    "dropoff_datetime",
+    "passenger_count",
+    "trip_distance",
+    "tip_amount",
+    "total_amount",
 ]
 
+# Define the date format
+date_format = "%Y-%m-%d %H:%M:%S"
+
+# Check if file is from 2009
+if "2009" in input_parquet:
+    columns_to_select = list(columns_2009.keys())
+    rename_mapping = columns_2009
+    datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
+else:
+    columns_to_select = columns_default
+    rename_mapping = None
+    datetime_columns = ["pickup_datetime", "dropoff_datetime"]
+
 try:
-    # 读取 Parquet 文件
-    df = pd.read_parquet(input_parquet, engine="pyarrow")
-    
-    # 筛选指定列
+    # Read the parquet file
+    print(f"Reading parquet file: {input_parquet}")
+    df = pd.read_parquet(input_parquet)
+
+    # Select relevant columns
     df_selected = df[columns_to_select]
-    
-    # 保存为 CSV 文件
+
+    # Rename columns for 2009 data to match other years
+    if rename_mapping:
+        print("Renaming columns to standard format...")
+        df_selected.rename(columns=rename_mapping, inplace=True)
+
+    # Convert datetime columns
+    print("Converting datetime columns...")
+    for col in datetime_columns:
+        df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
+
+    # Detect missing values and log them
+    print("Detecting missing values...")
+    missing_values = df_selected.isnull().sum()
+    print("Missing values per column:")
+    print(missing_values)
+
+    # Optional: Drop rows with missing datetime values (if necessary for your use case)
+    print("Dropping rows with missing datetime values...")
+    df_selected = df_selected.dropna()
+
+    # Write the processed data to CSV
+    print(f"Writing to CSV: {output_csv}")
     df_selected.to_csv(output_csv, index=False)
-    
     print(f"Successfully processed {input_parquet} to {output_csv}")
 
 except Exception as e:
+    # Enhanced error reporting
     print(f"Error processing file {input_parquet}: {e}")
     sys.exit(1)
