@@ -9,13 +9,8 @@ if [[ ! -f "$raw_data_urls" ]]; then
 fi
 
 filtered_urls="filtered_yellow_tripdata_urls.txt"
-
-grep "^https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_" "$raw_data_urls" | \
-    while read url; do
-        year_month=$(echo "$url" | sed -E 's/.*yellow_tripdata_([0-9]{4}-[0-9]{2}).*/\1/')
-        if [[ ! -z "$year_month" ]]; then
-            echo "$url,$year_month.csv"
-        fi
-    done > "$filtered_urls"
+grep "^https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_" "$raw_data_urls" > "$filtered_urls"
 
 echo "Filtered URLs and output file names have been saved to $filtered_urls"
+
+
