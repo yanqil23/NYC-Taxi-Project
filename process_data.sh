@@ -1,11 +1,12 @@
 #!/bin/bash
 
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <url>"
+    echo "Usage: $0 <year-month>"
     exit 1
 fi
 
-URL=$1
+YEAR_MONTH=$1
+URL="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_${YEAR_MONTH}.parquet"
 
 echo "Downloading data from $URL..."
 wget -N $URL
@@ -19,7 +20,6 @@ if [ ! -f $FILENAME ]; then
     echo "Downloaded file not found: $FILENAME"
     exit 1
 fi
-
 
 echo "Processing data..."
 python process_parquet_to_csv.py $FILENAME
