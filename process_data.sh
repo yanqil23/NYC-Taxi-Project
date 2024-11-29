@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# ./process_data.sh <url> <output_csv>
-
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <url> <output_csv>"
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <url>"
     exit 1
 fi
 
 URL=$1
-OUTPUT_CSV=$2
 
 echo "Downloading data from $URL..."
 wget -N $URL
@@ -23,11 +20,13 @@ if [ ! -f $FILENAME ]; then
     exit 1
 fi
 
+
 echo "Processing data..."
-python process_parquet_to_csv.py $FILENAME $OUTPUT_CSV
+python process_parquet_to_csv.py $FILENAME
 if [ $? -ne 0 ]; then
     echo "Failed to process data from $FILENAME"
     exit 1
 fi
 
-echo "Successfully processed $URL to $OUTPUT_CSV"
+echo "Successfully processed $URL"
+
