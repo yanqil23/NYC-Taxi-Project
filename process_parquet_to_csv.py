@@ -10,7 +10,6 @@ input_parquet = sys.argv[1]
 output = sys.argv[2]
 output_csv = f"{output}.csv"
 
-
 # Define column selection for 2009 data
 columns_2009 = {
     "Trip_Pickup_DateTime": "pickup_datetime",
@@ -21,8 +20,8 @@ columns_2009 = {
     "Total_Amt": "total_amount",
 }
 
-# Define default column selection
-columns_default = [
+# Define default column selection for 2010 data
+columns_2010 = [
     "pickup_datetime",
     "dropoff_datetime",
     "passenger_count",
@@ -31,16 +30,29 @@ columns_default = [
     "total_amount",
 ]
 
+# Define column selection for 2011-2024 data
+columns_2011_2024 = {
+    "tpep_pickup_datetime": "pickup_datetime",
+    "tpep_dropoff_datetime": "dropoff_datetime",
+    "passenger_count": "passenger_count",
+    "trip_distance": "trip_distance",
+    "tip_amount": "tip_amount",
+    "total_amount": "total_amount",
+}
+
 # Define the date format
 date_format = "%Y-%m-%d %H:%M:%S"
 
-# Check if file is from 2009
+# Determine the column selection and renaming based on the year in the filename
 if "2009" in input_parquet:
     columns_to_select = list(columns_2009.keys())
     rename_mapping = columns_2009
-else:
-    columns_to_select = columns_default
+elif "2010" in input_parquet:
+    columns_to_select = columns_2010
     rename_mapping = None
+else:
+    columns_to_select = list(columns_2011_2024.keys())
+    rename_mapping = columns_2011_2024
 
 try:
     # Read the parquet file
@@ -50,7 +62,7 @@ try:
     # Select relevant columns
     df_selected = df[columns_to_select]
 
-    # Rename columns for 2009 data to match other years
+    # Rename columns for 2009 or 2011-2024 data to match other years
     if rename_mapping:
         print("Renaming columns to standard format...")
         df_selected.rename(columns=rename_mapping, inplace=True)
@@ -67,7 +79,7 @@ try:
     print("Missing values per column:")
     print(missing_values)
 
-    # Optional: Drop rows with missing datetime values (if necessary for your use case)
+    # Optional: Drop rows with missing datetime values
     print("Dropping rows with missing datetime values...")
     df_selected = df_selected.dropna()
 
