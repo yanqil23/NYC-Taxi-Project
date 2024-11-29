@@ -4,10 +4,10 @@ import re
 
 # Check for correct usage
 if len(sys.argv) != 2:
-    print("Usage: python process_parquet_to_csv.py <raw_data_urls>")
+    print("Usage: python process_parquet_to_csv.py <parquet_file>")
     sys.exit(1)
 
-raw_data_urls = sys.argv[1]
+parquet_file = sys.argv[1]
 
 # Define column selection for 2009 data
 columns_2009 = {
@@ -32,69 +32,66 @@ columns_default = [
 # Define the date format
 date_format = "%Y-%m-%d %H:%M:%S"
 
-def extract_year_month_from_url(url):
-    """Extract year and month from the URL."""
-    match = re.search(r"yellow_tripdata_(\d{4}-\d{2})", url)
+def extract_year_month_from_filename(filename):
+    """Extract year and month from the filename."""
+    match = re.search(r"yellow_tripdata_(\d{4}-\d{2})", filename)
     if match:
         return match.group(1)
     else:
-        raise ValueError(f"Invalid URL format: {url}")
+        raise ValueError(f"Invalid filename format: {filename}")
 
 try:
-    with open(raw_data_urls, "r") as file:
-        for url in file:
-            url = url.strip()
+    # Process the parquet file directly
+    try:
+        # Generate output CSV filename
+        year_month = extract_year_month_from_filename(parquet_file)
+        output_csv = f"{year_month}.csv"
+        print(f"Processing file: {parquet_file}")
 
-            try:
-                # Generate output CSV filename
-                year_month = extract_year_month_from_url(url)
-                output_csv = f"{year_month}.csv"
-                print(f"Processing file from URL: {url}")
+        # Read the Parquet file
+        df = pd.read_parquet(parquet_file)
 
-                # Read the Parquet file directly from URL
-                df = pd.read_parquet(url)
+        # Check if file is from 2009
+        if "2009" in parquet_file:
+            columns_to_select = list(columns_2009.keys())
+            rename_mapping = columns_2009
+            datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
+        else:
+            columns_to_select = columns_default
+            rename_mapping = None
+            datetime_columns = ["pickup_datetime", "dropoff_datetime"]
 
-                # Check if file is from 2009
-                if "2009" in url:
-                    columns_to_select = list(columns_2009.keys())
-                    rename_mapping = columns_2009
-                    datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
-                else:
-                    columns_to_select = columns_default
-                    rename_mapping = None
-                    datetime_columns = ["pickup_datetime", "dropoff_datetime"]
+        # Select relevant columns
+        df_selected = df[columns_to_select]
 
-                # Select relevant columns
-                df_selected = df[columns_to_select]
+        # Rename columns for 2009 data to match other years
+        if rename_mapping:
+            print("Renaming columns to standard format...")
+            df_selected.rename(columns=rename_mapping, inplace=True)
 
-                # Rename columns for 2009 data to match other years
-                if rename_mapping:
-                    print("Renaming columns to standard format...")
-                    df_selected.rename(columns=rename_mapping, inplace=True)
+        # Convert datetime columns
+        print("Converting datetime columns...")
+        for col in datetime_columns:
+            df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
 
-                # Convert datetime columns
-                print("Converting datetime columns...")
-                for col in datetime_columns:
-                    df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
+        # Detect missing values and log them
+        print("Detecting missing values...")
+        missing_values = df_selected.isnull().sum()
+        print("Missing values per column:")
+        print(missing_values)
 
-                # Detect missing values and log them
-                print("Detecting missing values...")
-                missing_values = df_selected.isnull().sum()
-                print("Missing values per column:")
-                print(missing_values)
+        # Optional: Drop rows with missing datetime values
+        print("Dropping rows with missing datetime values...")
+        df_selected = df_selected.dropna()
 
-                # Optional: Drop rows with missing datetime values
-                print("Dropping rows with missing datetime values...")
-                df_selected = df_selected.dropna()
+        # Write the processed data to CSV
+        print(f"Writing to CSV: {output_csv}")
+        df_selected.to_csv(output_csv, index=False)
+        print(f"Successfully processed {parquet_file} to {output_csv}")
 
-                # Write the processed data to CSV
-                print(f"Writing to CSV: {output_csv}")
-                df_selected.to_csv(output_csv, index=False)
-                print(f"Successfully processed {url} to {output_csv}")
-
-            except Exception as e:
-                print(f"Error processing file {url}: {e}")
+    except Exception as e:
+        print(f"Error processing file {parquet_file}: {e}")
 
 except FileNotFoundError:
-    print(f"File {raw_data_urls} not found.")
+    print(f"File {parquet_file} not found.")
     sys.exit(1)
