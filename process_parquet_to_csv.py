@@ -1,13 +1,15 @@
 import pandas as pd
 import sys
-import re
 
 # Check for correct usage
-if len(sys.argv) != 2:
-    print("Usage: python process_parquet_to_csv.py <parquet_file>")
+if len(sys.argv) != 3:
+    print("Usage: python process_parquet_to_csv.py <input_parquet> <output>")
     sys.exit(1)
 
-parquet_file = sys.argv[1]
+input_parquet = sys.argv[1]
+output = sys.argv[2]
+output_csv = f"{output}.csv"
+
 
 # Define column selection for 2009 data
 columns_2009 = {
@@ -32,66 +34,50 @@ columns_default = [
 # Define the date format
 date_format = "%Y-%m-%d %H:%M:%S"
 
-def extract_year_month_from_filename(filename):
-    """Extract year and month from the filename."""
-    match = re.search(r"yellow_tripdata_(\d{4}-\d{2})", filename)
-    if match:
-        return match.group(1)
-    else:
-        raise ValueError(f"Invalid filename format: {filename}")
+# Check if file is from 2009
+if "2009" in input_parquet:
+    columns_to_select = list(columns_2009.keys())
+    rename_mapping = columns_2009
+    datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
+else:
+    columns_to_select = columns_default
+    rename_mapping = None
+    datetime_columns = ["pickup_datetime", "dropoff_datetime"]
 
 try:
-    # Process the parquet file directly
-    try:
-        # Generate output CSV filename
-        year_month = extract_year_month_from_filename(parquet_file)
-        output_csv = f"{year_month}.csv"
-        print(f"Processing file: {parquet_file}")
+    # Read the parquet file
+    print(f"Reading parquet file: {input_parquet}")
+    df = pd.read_parquet(input_parquet)
 
-        # Read the Parquet file
-        df = pd.read_parquet(parquet_file)
+    # Select relevant columns
+    df_selected = df[columns_to_select]
 
-        # Check if file is from 2009
-        if "2009" in parquet_file:
-            columns_to_select = list(columns_2009.keys())
-            rename_mapping = columns_2009
-            datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
-        else:
-            columns_to_select = columns_default
-            rename_mapping = None
-            datetime_columns = ["pickup_datetime", "dropoff_datetime"]
+    # Rename columns for 2009 data to match other years
+    if rename_mapping:
+        print("Renaming columns to standard format...")
+        df_selected.rename(columns=rename_mapping, inplace=True)
 
-        # Select relevant columns
-        df_selected = df[columns_to_select]
+    # Convert datetime columns
+    print("Converting datetime columns...")
+    for col in datetime_columns:
+        df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
 
-        # Rename columns for 2009 data to match other years
-        if rename_mapping:
-            print("Renaming columns to standard format...")
-            df_selected.rename(columns=rename_mapping, inplace=True)
+    # Detect missing values and log them
+    print("Detecting missing values...")
+    missing_values = df_selected.isnull().sum()
+    print("Missing values per column:")
+    print(missing_values)
 
-        # Convert datetime columns
-        print("Converting datetime columns...")
-        for col in datetime_columns:
-            df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
+    # Optional: Drop rows with missing datetime values (if necessary for your use case)
+    print("Dropping rows with missing datetime values...")
+    df_selected = df_selected.dropna()
 
-        # Detect missing values and log them
-        print("Detecting missing values...")
-        missing_values = df_selected.isnull().sum()
-        print("Missing values per column:")
-        print(missing_values)
+    # Write the processed data to CSV
+    print(f"Writing to CSV: {output_csv}")
+    df_selected.to_csv(output_csv, index=False)
+    print(f"Successfully processed {input_parquet} to {output_csv}")
 
-        # Optional: Drop rows with missing datetime values
-        print("Dropping rows with missing datetime values...")
-        df_selected = df_selected.dropna()
-
-        # Write the processed data to CSV
-        print(f"Writing to CSV: {output_csv}")
-        df_selected.to_csv(output_csv, index=False)
-        print(f"Successfully processed {parquet_file} to {output_csv}")
-
-    except Exception as e:
-        print(f"Error processing file {parquet_file}: {e}")
-
-except FileNotFoundError:
-    print(f"File {parquet_file} not found.")
+except Exception as e:
+    # Enhanced error reporting
+    print(f"Error processing file {input_parquet}: {e}")
     sys.exit(1)
