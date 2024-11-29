@@ -38,11 +38,9 @@ date_format = "%Y-%m-%d %H:%M:%S"
 if "2009" in input_parquet:
     columns_to_select = list(columns_2009.keys())
     rename_mapping = columns_2009
-    datetime_columns = ["Trip_Pickup_DateTime", "Trip_Dropoff_DateTime"]
 else:
     columns_to_select = columns_default
     rename_mapping = None
-    datetime_columns = ["pickup_datetime", "dropoff_datetime"]
 
 try:
     # Read the parquet file
@@ -59,6 +57,7 @@ try:
 
     # Convert datetime columns
     print("Converting datetime columns...")
+    datetime_columns = ["pickup_datetime", "dropoff_datetime"]
     for col in datetime_columns:
         df_selected[col] = pd.to_datetime(df_selected[col], format=date_format, errors="coerce")
 
