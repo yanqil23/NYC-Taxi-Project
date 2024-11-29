@@ -22,7 +22,7 @@ if [ ! -f $FILENAME ]; then
 fi
 
 echo "Processing data..."
-python process_parquet_to_csv.py $FILENAME
+python process_parquet_to_csv.py $FILENAME $YEAR_MONTH
 if [ $? -ne 0 ]; then
     echo "Failed to process data from $FILENAME"
     exit 1
