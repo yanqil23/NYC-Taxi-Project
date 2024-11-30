@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# ./process_data.sh <url> <output_csv>
-
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <url> <output_csv>"
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <year-month>"
     exit 1
 fi
 
-URL=$1
-OUTPUT_CSV=$2
+YEAR_MONTH=$1
+URL="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_${YEAR_MONTH}.parquet"
 
 echo "Downloading data from $URL..."
 wget -N $URL
@@ -24,10 +22,11 @@ if [ ! -f $FILENAME ]; then
 fi
 
 echo "Processing data..."
-python process_parquet_to_csv.py $FILENAME $OUTPUT_CSV
+python process_parquet_to_csv.py $FILENAME $YEAR_MONTH
 if [ $? -ne 0 ]; then
     echo "Failed to process data from $FILENAME"
     exit 1
 fi
 
-echo "Successfully processed $URL to $OUTPUT_CSV"
+echo "Successfully processed $URL"
+

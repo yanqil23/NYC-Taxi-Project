@@ -1,24 +1,24 @@
-log    =    log/process-chtc_$(Cluster)_$(output_file).log
-error  =  error/process-chtc_$(Cluster)_$(output_file).err
-output = output/process-chtc_$(Cluster)_$(output_file).out
+log    =    log/process-chtc_$(Cluster)_$(year_month).log
+error  =  error/process-chtc_$(Cluster)_$(year_month).err
+output = output/process-chtc_$(Cluster)_$(year_month).out
 
-container_image = file:///staging/jgillett/python_numpy_pandas_sklearn.sif
+container_image = file:///staging/jwu724/python_numpy_pandas_sklearn.sif
 
 universe = vanilla
-executable = process_data.sh
+executable = ./process_data.sh
 
-arguments = $(url) $(output_file)
+arguments = $(year_month)
 
 transfer_input_files = process_parquet_to_csv.py
-transfer_output_files = $(output_file)
+transfer_output_files = $(year_month).csv
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
-transfer_output_remaps = "$(output_file) = /home/groups/STAT_DSCP/group9/data/$(output_file)"
+transfer_output_remaps = "$(year_month).csv = /home/groups/STAT_DSCP/group9/data/$(year_month).csv"
 
 request_cpus = 1
-request_memory = 1GB
+request_memory = 2GB
 request_disk = 2GB
 
-queue url,output_file from test_data_url.txt
+queue year_month from filtered_year_months.txt
 
 
