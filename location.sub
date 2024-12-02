@@ -1,0 +1,23 @@
+log    =    log/process-chtc_$(Cluster)_$(year_month)_location.log
+error  =  error/process-chtc_$(Cluster)_$(year_month)_location.err
+output = output/process-chtc_$(Cluster)_$(year_month)_location.out
+
+container_image = file:///staging/jwu724/python_numpy_pandas_sklearn.sif
+
+universe = vanilla
+executable = ./location.sh
+
+arguments = $(year_month)
+
+transfer_input_files = location.py
+transfer_output_files = $(year_month)_pickup_counts.csv,$(year_month)_dropoff_counts.csv
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_remaps = "$(year_month)_pickup_counts.csv = /staging/jwu724/location_data/$(year_month)_pickup_counts.csv;$(year_month)_dropoff_counts.csv = /staging/jwu724/location_data/$(year_month)_dropoff_counts.csv"
+
+request_cpus = 1
+request_memory = 4GB
+request_disk = 4GB
+
+queue year_month from csv_files.txt
+
