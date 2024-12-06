@@ -1,34 +1,22 @@
 #!/bin/bash
 
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <time>"
-    echo "Example: $0 2018-01"
+# Check for correct usage
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <year_month>"
     exit 1
 fi
 
+YEAR_MONTH=$1
 
-TIME=$1
+# Run the Python script with the given year_month parameter
+echo "Processing data for: $YEAR_MONTH"
 
+python GBRT.py "$YEAR_MONTH"
 
-
-INPUT_DIR="/home/groups/STAT_DSCP/group9/data"
-OUTPUT_DIR="/home/groups/STAT_DSCP/group9/jelly/group"
-
-INPUT_FILE="$INPUT_DIR/${TIME}.csv"
-OUTPUT_FILE="$OUTPUT_DIR/r2_score_${TIME}.csv"
-
-
-if [ -f "$INPUT_FILE" ]; then
-    echo "Processing $INPUT_FILE..."
-
-
-    python3 GBRT.py process_trip_data "$INPUT_FILE" "$OUTPUT_FILE"
-
-    echo "Output saved to $OUTPUT_FILE."
+# Check if the Python script executed successfully
+if [ $? -eq 0 ]; then
+    echo "GBRT for $YEAR_MONTH completed successfully."
 else
-    echo "Input file $INPUT_FILE does not exist. Please check the time and try again."
+    echo "GBRT for $YEAR_MONTH failed."
     exit 1
 fi
-
-echo "Processing completed for $TIME."
